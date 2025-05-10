@@ -4,43 +4,36 @@ FROM php:8.1
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Configurar el entorno para evitar errores en la instalación
+# Configurar el entorno para evitar problemas en la instalación de paquetes
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Intento 1: Dividir los comandos apt-get
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN apt-get update
-
-# Intento 2: Añadir un espejo de Debian (Comentado por precaución)
-# RUN sed -i 's#httpredir.debian.org#ftp.debian.org/debian/#g' /etc/apt/sources.list
-# RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-# RUN apt-get update
-
-RUN apt-get install -y --no-install-recommends \
+# Actualiza la lista de paquetes y agrega el repositorio oficial de PHP
+RUN apt-get update && apt-get install -y \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev php-mbstring php-xml php-bcmath php-tokenizer \
-    php-zip php-curl php-gd php-intl php-pdo php-mysql
-RUN rm -rf /var/lib/apt/lists/*
+    libonig-dev libxml2-dev && \
+    apt-get install -y --no-install-recommends \
+    libpq-dev mariadb-client && \
+    docker-php-ext-install pdo pdo_mysql mbstring xml bcmath tokenizer zip curl gd intl
 
-# Instalar Composer globalmente
+# Instala Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copiar archivos esenciales primero
+# Copia archivos esenciales primero
 COPY composer.json composer.lock ./
 
 # Limpieza y actualización de Composer
 RUN composer self-update && composer clear-cache
 
-# Instalar dependencias de PHP
+# Instala dependencias de Laravel
 RUN composer install --no-dev --no-interaction --prefer-dist
 
-# Copiar el resto del código del proyecto
+# Copia el resto del código del proyecto
 COPY . .
 
 # Asegurar permisos correctos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Instalar dependencias de Node.js y construir frontend
+# Instala dependencias de Node.js y construye frontend
 RUN npm install
 RUN npm run build
 
@@ -49,4 +42,3 @@ EXPOSE 8000
 
 # Inicia el servidor PHP cuando el contenedor se ejecuta
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
-
