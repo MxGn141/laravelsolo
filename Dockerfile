@@ -1,43 +1,41 @@
-# Usa la imagen oficial de PHP con FPM
+# Usa la imagen oficial de PHP que tiene los archivos fuente necesarios para compilar extensiones
 FROM php:8.2-cli
 
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Configurar el entorno para evitar errores en la instalación
+# Configurar el entorno para evitar problemas en la instalación de paquetes
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Actualiza la lista de paquetes y agrega herramientas esenciales
 RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev
+    libonig-dev libxml2-dev mariadb-client libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y --no-install-recommends \
-    libpq-dev mariadb-client
+# Instala extensiones de PHP necesarias para Laravel
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql mbstring xml bcmath zip curl gd intl
 
-# Asegurarse de actualizar y forzar la instalación de bison y re2c
-RUN apt-get update && apt-get install -y --no-install-recommends --force-yes bison re2c
-
-RUN docker-php-ext-install pdo pdo_mysql mbstring xml bcmath tokenizer zip curl gd intl
-
-# Instalar Composer globalmente
+# Instala Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copiar archivos esenciales primero
+# Copia archivos esenciales primero para aprovechar la caché de Docker
 COPY composer.json composer.lock ./
 
 # Limpieza y actualización de Composer
 RUN composer self-update && composer clear-cache
 
-# Instalar dependencias de PHP
+# Instala dependencias de Laravel
 RUN composer install --no-dev --no-interaction --prefer-dist
 
-# Copiar el resto del código del proyecto
+# Copia el resto del código del proyecto
 COPY . .
 
-# Asegurar permisos correctos
+# Establecer permisos correctos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Instalar dependencias de Node.js y construir frontend
+# Instala dependencias de Node.js y construye el frontend
 RUN npm install
 RUN npm run build
 
