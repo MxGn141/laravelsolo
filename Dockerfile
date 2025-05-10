@@ -1,4 +1,4 @@
-# Usa la imagen oficial de PHP con FPM (FastCGI Process Manager)
+# Usa la imagen oficial de PHP con FPM
 FROM php:8.2-fpm
 
 # Establece el directorio de trabajo
@@ -7,22 +7,25 @@ WORKDIR /app
 # Instala dependencias esenciales
 RUN apt-get update && apt-get install -y \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev && \
-    docker-php-ext-install pdo pdo_mysql gd mbstring xml
+    libonig-dev libxml2-dev php-mbstring php-xml php-bcmath php-tokenizer \
+    php-zip php-curl php-gd php-intl php-pdo php-mysql
 
 # Instala Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copia archivos esenciales primero para aprovechar la caché
+# Copia archivos esenciales primero para aprovechar la caché de Docker
 COPY composer.json composer.lock ./
 
-# Instala las dependencias de PHP
+# Limpieza y actualización de Composer
+RUN composer self-update && composer clear-cache
+
+# Instala las dependencias de Laravel
 RUN composer install --no-dev --no-interaction --prefer-dist
 
 # Copia el resto del código del proyecto
 COPY . .
 
-# Establece permisos correctos
+# Establecer permisos correctos
 RUN chmod -R 775 storage bootstrap/cache
 
 # Instala dependencias de Node.js y construye el frontend
