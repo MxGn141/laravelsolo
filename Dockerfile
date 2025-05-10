@@ -1,4 +1,4 @@
-# Usa la imagen oficial de PHP con CLI
+# Usa la imagen oficial de PHP con CLI, que incluye archivos fuente para compilar extensiones
 FROM php:8.2-cli
 
 # Establece el directorio de trabajo
@@ -45,6 +45,13 @@ RUN docker-php-ext-install intl
 RUN docker-php-ext-install xsl
 
 # --------------------------------------
+# 🔧 Creación y corrección de permisos en Laravel
+# --------------------------------------
+RUN mkdir -p storage bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# --------------------------------------
 # 🔧 Instalación de Composer
 # --------------------------------------
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -52,11 +59,9 @@ RUN composer self-update
 RUN composer clear-cache
 
 # --------------------------------------
-# 🔧 Copia de archivos esenciales y permisos
+# 🔧 Copia de archivos esenciales
 # --------------------------------------
 COPY composer.json composer.lock ./
-RUN chmod -R 775 storage bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache
 
 # --------------------------------------
 # 🔧 Instalación de dependencias de Laravel
@@ -83,3 +88,4 @@ EXPOSE 8000
 # 🔧 Inicio del servidor PHP
 # --------------------------------------
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+
