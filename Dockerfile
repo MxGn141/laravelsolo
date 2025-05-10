@@ -4,35 +4,39 @@ FROM php:8.2-fpm
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Instala dependencias esenciales
-RUN apt-get update && apt-get install -y \
+# Configurar el entorno para evitar errores en la instalación
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Actualizar y limpiar caché antes de instalar paquetes
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev php-mbstring php-xml php-bcmath php-tokenizer \
-    php-zip php-curl php-gd php-intl php-pdo php-mysql
+    php-zip php-curl php-gd php-intl php-pdo php-mysql \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instala Composer globalmente
+# Instalar Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copia archivos esenciales primero para aprovechar la caché de Docker
+# Copiar archivos esenciales primero
 COPY composer.json composer.lock ./
 
 # Limpieza y actualización de Composer
 RUN composer self-update && composer clear-cache
 
-# Instala las dependencias de Laravel
+# Instalar dependencias de PHP
 RUN composer install --no-dev --no-interaction --prefer-dist
 
-# Copia el resto del código del proyecto
+# Copiar el resto del código del proyecto
 COPY . .
 
-# Establecer permisos correctos
+# Asegurar permisos correctos
 RUN chmod -R 775 storage bootstrap/cache
 
-# Instala dependencias de Node.js y construye el frontend
+# Instalar dependencias de Node.js y construir frontend
 RUN npm install
 RUN npm run build
 
-# Expone el puerto 8000 para el servidor de desarrollo
+# Expone el puerto 8000 para el servidor
 EXPOSE 8000
 
 # Inicia el servidor PHP cuando el contenedor se ejecuta
