@@ -1,4 +1,4 @@
-# Usa la imagen oficial de PHP con CLI (incluye archivos fuente para compilar extensiones)
+# Usa la imagen oficial de PHP con CLI
 FROM php:8.2-cli
 
 # Establece el directorio de trabajo
@@ -13,8 +13,8 @@ RUN apt-get update
 # Instalar herramientas esenciales
 RUN apt-get install -y unzip curl git zip mariadb-client libpq-dev
 
-# Instalar librerías para PHP GD
-RUN apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libxml2-dev
+# Instalar librerías para PHP GD y ZIP
+RUN apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libxml2-dev libzip-dev
 
 # Instalar extensiones de PHP individualmente
 RUN docker-php-ext-install pdo
@@ -57,4 +57,3 @@ EXPOSE 8000
 
 # Inicia el servidor PHP cuando el contenedor se ejecuta
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
-
