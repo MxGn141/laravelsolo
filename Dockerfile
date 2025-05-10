@@ -7,12 +7,20 @@ WORKDIR /app
 # Configurar el entorno para evitar errores en la instalación
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Actualizar y limpiar caché antes de instalar paquetes
-RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+# Intento 1: Dividir los comandos apt-get
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+
+# Intento 2: Añadir un espejo de Debian (Comentado por precaución)
+# RUN sed -i 's#httpredir.debian.org#ftp.debian.org/debian/#g' /etc/apt/sources.list
+# RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev php-mbstring php-xml php-bcmath php-tokenizer \
-    php-zip php-curl php-gd php-intl php-pdo php-mysql \
-    && rm -rf /var/lib/apt/lists/*
+    php-zip php-curl php-gd php-intl php-pdo php-mysql
+RUN rm -rf /var/lib/apt/lists/*
 
 # Instalar Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -41,3 +49,4 @@ EXPOSE 8000
 
 # Inicia el servidor PHP cuando el contenedor se ejecuta
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+
