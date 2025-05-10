@@ -1,5 +1,5 @@
 # Usa la imagen oficial de PHP con FPM
-FROM php:8.1-fpm
+FROM php:8.2-fpm
 
 # Establece el directorio de trabajo
 WORKDIR /app
@@ -9,11 +9,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip curl git zip libpng-dev libjpeg-dev libfreetype6-dev \
-    libonig-dev libxml2-dev \
-    build-essential autoconf libtool
+    libonig-dev libxml2-dev
 
 RUN apt-get install -y --no-install-recommends \
     libpq-dev mariadb-client
+
+# Asegurarse de actualizar y forzar la instalación de bison y re2c
+RUN apt-get update && apt-get install -y --no-install-recommends --force-yes bison re2c
 
 RUN docker-php-ext-install pdo pdo_mysql mbstring xml bcmath tokenizer zip curl gd intl
 
