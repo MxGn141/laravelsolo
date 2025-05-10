@@ -1,5 +1,5 @@
 # Usa la imagen oficial de PHP con FPM
-FROM php:8.2-fpm
+FROM php:8.1
 
 # Establece el directorio de trabajo
 WORKDIR /app
